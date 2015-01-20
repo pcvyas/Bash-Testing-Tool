@@ -1,0 +1,36 @@
+#!/bin/bash
+if [ ${#} -ne 2 ]; then
+   echo "You have entered an incorrect number of command line arguments, runSuite will take 2 arguments only." > /dev/stderr
+   exit 1
+fi
+
+
+for filestem in `cat ${1}`;
+do
+
+  if [[ ! -r "${filestem}.in" || ! -r "${filestem}.out" ]]; then
+      echo "There are missing or unreadable "${filestem}.in" or "${filestem}.out" files." > /dev/stderr
+  
+  exit 1
+  fi 
+   temp=`mktemp`
+   if [[ -e "${filestem}.args" ]]; then
+       ${2} $(cat "${filestem}.args") < ${filestem}.in > $temp
+   else 
+
+   (./${2} < "${filestem}.in") > "${temp}"
+   fi
+
+   diff  $temp "${filestem}.out" > /dev/null
+   if [ ${?} -ne 0 ]; then
+     echo "Test failed: ${filestem}"
+     echo "Input:"
+     cat "${filestem}.in"
+     echo "Expected:"
+     cat "${filestem}.out"
+     echo "Actual:"
+     cat "${temp}"
+   fi
+  rm ${temp}
+
+done
